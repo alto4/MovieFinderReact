@@ -29,6 +29,7 @@ class MovieFinder extends React.Component {
     this.state = {
       searchTerm: "",
       results: [],
+      error: "",
     };
 
     // Control changes to the search input value
@@ -55,6 +56,18 @@ class MovieFinder extends React.Component {
       return;
     }
 
+    // checkStatus function - checks the status of a request before it is rendered
+    const checkStatus = (response) => {
+      if (response.ok) {
+        // .ok returns true if response status is 200-299
+        return response;
+      }
+      throw new Error("Request was either a 404 or 500");
+    };
+
+    // Store response as a variable for processing
+    const json = (response) => response.json();
+
     // Make AJAX request to retrieve a list of results
     fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=${apiKey}`)
       .then((response) => {
@@ -66,16 +79,19 @@ class MovieFinder extends React.Component {
         // Throw an error if response if not between 200-299
         throw new Error("Request was either a 404 or 500");
       })
+      // Update the results state, which will trigger individual movie cards to be rendered in the DOM if results exist
       .then((data) => {
         this.setState({ results: data.Search });
       })
+      // If no results are returned, provide the error message in the DOM and log to the console
       .catch((error) => {
+        this.setState({ error: error.message });
         console.log(error);
       });
   }
 
   render() {
-    const { searchTerm, results } = this.state; // ES6 destructuring
+    const { searchTerm, results, error } = this.state; // ES6 destructuring
 
     return (
       <div className="container">
@@ -96,9 +112,17 @@ class MovieFinder extends React.Component {
               </button>
             </form>
             {/* Area to render search results */}
-            {results.map((movie) => {
-              return <Movie key={movie.imdbID} movie={movie} />;
-            })}
+            {(() => {
+              // If an error is returned, return it in the DOM
+              if (error) {
+                return error;
+              }
+
+              // Otherwise, results have successfully been returned and will be rendered in the DOM
+              return results.map((movie) => {
+                return <Movie key={movie.imdbID} movie={movie} />;
+              });
+            })()}
           </div>
         </div>
       </div>

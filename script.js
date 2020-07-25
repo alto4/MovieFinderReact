@@ -63,7 +63,8 @@ var MovieFinder = function (_React$Component) {
 
     _this.state = {
       searchTerm: "",
-      results: []
+      results: [],
+      error: ""
     };
 
     // Control changes to the search input value
@@ -101,6 +102,20 @@ var MovieFinder = function (_React$Component) {
         return;
       }
 
+      // checkStatus function - checks the status of a request before it is rendered
+      var checkStatus = function checkStatus(response) {
+        if (response.ok) {
+          // .ok returns true if response status is 200-299
+          return response;
+        }
+        throw new Error("Request was either a 404 or 500");
+      };
+
+      // Store response as a variable for processing
+      var json = function json(response) {
+        return response.json();
+      };
+
       // Make AJAX request to retrieve a list of results
       fetch("https://www.omdbapi.com/?s=" + searchTerm + "&apikey=" + apiKey).then(function (response) {
         // If the response is good, return data to next block in chain
@@ -110,9 +125,14 @@ var MovieFinder = function (_React$Component) {
 
         // Throw an error if response if not between 200-299
         throw new Error("Request was either a 404 or 500");
-      }).then(function (data) {
+      })
+      // Update the results state, which will trigger individual movie cards to be rendered in the DOM if results exist
+      .then(function (data) {
         _this2.setState({ results: data.Search });
-      }).catch(function (error) {
+      })
+      // If no results are returned, provide the error message in the DOM and log to the console
+      .catch(function (error) {
+        _this2.setState({ error: error.message });
         console.log(error);
       });
     }
@@ -121,7 +141,8 @@ var MovieFinder = function (_React$Component) {
     value: function render() {
       var _state = this.state,
           searchTerm = _state.searchTerm,
-          results = _state.results; // ES6 destructuring
+          results = _state.results,
+          error = _state.error; // ES6 destructuring
 
       return React.createElement(
         "div",
@@ -148,9 +169,17 @@ var MovieFinder = function (_React$Component) {
                 "Submit"
               )
             ),
-            results.map(function (movie) {
-              return React.createElement(Movie, { key: movie.imdbID, movie: movie });
-            })
+            function () {
+              // If an error is returned, return it in the DOM
+              if (error) {
+                return error;
+              }
+
+              // Otherwise, results have successfully been returned and will be rendered in the DOM
+              return results.map(function (movie) {
+                return React.createElement(Movie, { key: movie.imdbID, movie: movie });
+              });
+            }()
           )
         )
       );
