@@ -65,25 +65,20 @@ class MovieFinder extends React.Component {
       throw new Error("Request was either a 404 or 500");
     };
 
-    // Store response as a variable for processing
     const json = (response) => response.json();
 
-    // Make AJAX request to retrieve a list of results
-    fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=${apiKey}`)
-      .then((response) => {
-        // If the response is good, return data to next block in chain
-        if (response.ok) {
-          return response.json();
+    fetch(`https://www.omdbapi.com/?s=${searchTerm}&apikey=b7da8d63`)
+      .then(checkStatus)
+      .then(json)
+      .then((data) => {
+        if (data.Response === "False") {
+          throw new Error(data.Error);
         }
 
-        // Throw an error if response if not between 200-299
-        throw new Error("Request was either a 404 or 500");
+        if (data.Response === "True" && data.Search) {
+          this.setState({ results: data.Search, error: "" });
+        }
       })
-      // Update the results state, which will trigger individual movie cards to be rendered in the DOM if results exist
-      .then((data) => {
-        this.setState({ results: data.Search });
-      })
-      // If no results are returned, provide the error message in the DOM and log to the console
       .catch((error) => {
         this.setState({ error: error.message });
         console.log(error);
